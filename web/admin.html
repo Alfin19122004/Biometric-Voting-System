@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Control | Secure Portal</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg: #020617;
@@ -14,215 +14,236 @@
             --warning: #f59e0b;
             --success: #10b981;
             --text: #f8fafc;
+            --text-dim: #94a3b8;
             --glass-border: rgba(255, 255, 255, 0.1);
         }
 
         body {
             background-color: var(--bg);
-            background-image: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.1) 0%, transparent 80%);
+            background-image: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.08) 0%, transparent 80%);
             color: var(--text);
             font-family: 'Plus Jakarta Sans', sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            margin: 0; padding: 2rem;
             min-height: 100vh;
-            margin: 0;
+            display: flex; justify-content: center; align-items: flex-start;
         }
 
-        .admin-card {
+        .admin-container {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 2rem;
+            width: 100%;
+            max-width: 1300px;
+        }
+
+        .card {
             background: var(--card);
-            padding: 3rem;
-            border-radius: 32px;
+            padding: 2rem;
+            border-radius: 24px;
             border: 1px solid var(--glass-border);
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            width: 100%;
-            max-width: 450px;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
         }
 
-        /* Top Security Glow */
-        .admin-card::before {
-            content: "";
+        /* --- Tooltip Logic --- */
+        [data-tooltip] {
+            position: relative;
+            cursor: pointer;
+        }
+
+        [data-tooltip]::after {
+            content: attr(data-tooltip);
             position: absolute;
-            top: 0; left: 0; right: 0; height: 4px;
-            background: linear-gradient(90deg, var(--accent), var(--danger), var(--warning));
-        }
-
-        h1 {
-            font-size: 1.8rem;
-            font-weight: 800;
-            margin-bottom: 0.5rem;
-            letter-spacing: -1px;
-        }
-
-        p.subtitle {
-            color: #94a3b8;
-            font-size: 0.85rem;
-            margin-bottom: 2.5rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .input-group {
-            margin-bottom: 2rem;
-            position: relative;
-        }
-
-        input[type="password"] {
-            width: 100%;
-            padding: 16px;
-            background: rgba(30, 41, 59, 0.5);
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%) scale(0.9);
+            background: #1e293b;
             color: white;
-            font-size: 1rem;
-            text-align: center;
-            transition: all 0.3s;
-            box-sizing: border-box;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.7rem;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s;
+            border: 1px solid var(--accent);
+            z-index: 100;
+            pointer-events: none;
         }
 
-        input[type="password"]:focus {
-            outline: none;
-            border-color: var(--accent);
-            background: rgba(30, 41, 59, 0.8);
-            box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
+        [data-tooltip]:hover::after {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) scale(1);
         }
 
-        .actions {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
+        /* --- Typography & Elements --- */
+        h1 { font-size: 1.4rem; font-weight: 800; margin-bottom: 0.5rem; text-align: center; }
+        h2 { font-size: 0.8rem; text-transform: uppercase; color: var(--accent); margin: 1.5rem 0 1rem; letter-spacing: 1px; border-bottom: 1px solid var(--glass-border); padding-bottom: 5px; }
+        
+        .shield-icon { width: 40px; height: 40px; background: rgba(59, 130, 246, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; color: var(--accent); }
+
+        input {
+            width: 100%; padding: 10px; background: #1e293b; border: 1px solid var(--glass-border);
+            border-radius: 8px; color: white; font-size: 0.85rem; margin-bottom: 8px;
         }
 
         button {
-            width: 100%;
-            padding: 14px;
+            width: 100%; padding: 10px; border-radius: 8px; border: none; font-weight: 700;
+            font-size: 0.8rem; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-outline { background: transparent; border: 1px solid var(--glass-border); color: white; }
+        .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px dashed var(--danger); }
+        button:hover { filter: brightness(1.2); transform: translateY(-1px); }
+
+        /* --- Viewer (Terminal Style) --- */
+        pre {
+            background: #000;
+            color: #10b981;
+            padding: 15px;
             border-radius: 12px;
-            border: none;
-            font-weight: 700;
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        /* Specific Button Styles */
-        .btn-publish {
-            background: var(--accent);
-            color: white;
-        }
-        .btn-publish:hover {
-            box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
-            transform: translateY(-2px);
-        }
-
-        .btn-lock {
-            background: transparent;
-            color: var(--warning);
-            border: 1px solid var(--warning);
-        }
-        .btn-lock:hover {
-            background: rgba(245, 158, 11, 0.1);
-            transform: translateY(-2px);
-        }
-
-        .btn-reset {
-            background: rgba(239, 68, 68, 0.1);
-            color: var(--danger);
+            font-family: 'Fira Code', monospace;
+            font-size: 0.75rem;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #1e293b;
             margin-top: 10px;
-            font-size: 0.8rem;
-            border: 1px dashed var(--danger);
-        }
-        .btn-reset:hover {
-            background: var(--danger);
-            color: white;
         }
 
-        button:active {
-            transform: scale(0.98);
-        }
+        .grid-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
 
-        /* Decorative "Lock" Icon Placeholder */
-        .shield-icon {
-            width: 60px;
-            height: 60px;
-            background: rgba(59, 130, 246, 0.1);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 1.5rem;
-            color: var(--accent);
-            font-size: 1.5rem;
-        }
+        @media (max-width: 1000px) { .admin-container { grid-template-columns: 1fr; } .grid-panel { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
 
-<div class="admin-card">
-    <div class="shield-icon">🛡️</div>
-    <h1>Admin Control</h1>
-    <p class="subtitle">Secure Election Management</p>
+<div class="admin-container">
+    
+    <aside class="card">
+        <div class="shield-icon">🛡️</div>
+        <h1>System Master</h1>
+        <p style="text-align:center; color:var(--text-dim); font-size:0.7rem; text-transform:uppercase; margin-bottom:2rem;">Secure Access Only</p>
 
-    <div class="input-group">
-        <input type="password" id="pass" placeholder="Authorization Password">
-    </div>
-
-    <div class="actions">
-        <button class="btn-publish" onclick="publish()">
-            Publish Live Results
-        </button>
+        <input type="password" id="pass" placeholder="Admin Key">
         
-        <button class="btn-lock" onclick="lock()">
-            Lock All Entries
-        </button>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+            <button class="btn-primary" data-tooltip="Make results public for all users" onclick="publish()">Publish Results</button>
+            <button class="btn-outline" data-tooltip="Stop all voting and result viewing" onclick="lock()">Lock Portal</button>
+            <button class="btn-danger" data-tooltip="Wipe all voters, candidates, and logs" onclick="resetElection()">Full System Reset</button>
+        </div>
+    </aside>
 
-        <button class="btn-reset" onclick="resetElection()">
-            Dangerous: Reset Election
-        </button>
-    </div>
+    <main class="card">
+        <div class="grid-panel">
+            
+            <div>
+                <h2>Voter Registration</h2>
+                <input type="text" id="voterName" placeholder="Voter Name">
+                <input type="number" id="fingerID" placeholder="Fingerprint ID">
+                <button class="btn-primary" data-tooltip="Link a name to a fingerprint ID" onclick="addVoter()">Add Voter</button>
+
+                <h2>Candidate Setup</h2>
+                <input type="text" id="candidateName" placeholder="Candidate Name">
+                <button class="btn-primary" data-tooltip="Add a new person to the ballot" onclick="addCandidate()">Add Candidate</button>
+                
+                <h2 style="color:var(--danger)">Danger Zone</h2>
+                <button class="btn-danger" data-tooltip="Set all candidate vote counts to zero" onclick="resetVotes()">Reset All Votes</button>
+            </div>
+
+            <div>
+                <h2>Registered Voters</h2>
+                <button class="btn-outline" data-tooltip="Fetch voter database and voting status" onclick="loadVoters()">Show Voters List</button>
+                <pre id="voterList">System ready...</pre>
+
+                <h2>Candidate Status</h2>
+                <button class="btn-outline" data-tooltip="Fetch all candidates and current tallies" onclick="loadCandidates()">Show Candidates List</button>
+                <pre id="candidateList">Waiting for fetch...</pre>
+            </div>
+
+        </div>
+    </main>
 </div>
 
 <script>
-    // Note: I kept your functional logic exactly the same, 
-    // just wrapped in the new visual structure.
+// --- AUTH & MASTER FUNCTIONS ---
+function publish(){
+    fetch("/publish_results",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({password:document.getElementById("pass").value})
+    }).then(res=>res.json()).then(data=>alert(data.status));
+}
 
-    function publish(){
-        fetch("/publish_results",{
+function lock(){
+    fetch("/lock_results",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({password:document.getElementById("pass").value})
+    }).then(res=>res.json()).then(data=>alert(data.status));
+}
+
+function resetElection(){
+    if(confirm("DANGER: This wipes EVERYTHING. Continue?")){
+        fetch("/reset_all",{
             method:"POST",
             headers:{"Content-Type":"application/json"},
             body:JSON.stringify({password:document.getElementById("pass").value})
-        })
-        .then(res=>res.json())
-        .then(data=>alert(data.status));
+        }).then(res=>res.json()).then(data=>alert(data.status));
     }
+}
 
-    function lock(){
-        fetch("/lock_results",{
-            method:"POST",
-            headers:{"Content-Type":"application/json"},
-            body:JSON.stringify({password:document.getElementById("pass").value})
+// --- DATABASE FUNCTIONS ---
+function addVoter() {
+    fetch('/add_voter', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            name: document.getElementById('voterName').value,
+            fingerprint_id: document.getElementById('fingerID').value
         })
-        .then(res=>res.json())
-        .then(data=>alert(data.status));
-    }
+    }).then(res => res.json()).then(data => alert(data.status));
+}
 
-    function resetElection(){
-        if(confirm("Are you absolutely sure? This will wipe all data.")){
-            fetch("/reset_all",{
-                method:"POST",
-                headers:{"Content-Type":"application/json"},
-                body:JSON.stringify({password:document.getElementById("pass").value})
-            })
-            .then(res=>res.json())
-            .then(data=>alert(data.status));
-        }
+function addCandidate() {
+    fetch('/add_candidate', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ name: document.getElementById('candidateName').value })
+    }).then(res => res.json()).then(data => alert(data.status));
+}
+
+function resetVotes() {
+    if(confirm("Reset all current vote counts?")){
+        fetch('/reset_votes', { method: 'POST' })
+        .then(res => res.json()).then(data => alert(data.status));
     }
+}
+
+// --- VIEWING FUNCTIONS ---
+function loadVoters() {
+    fetch('/view_voters')
+    .then(res => res.json())
+    .then(data => {
+        let output = data.length > 0 ? "" : "No voters found.";
+        data.forEach(v => {
+            output += `[ID: ${v.id}] ${v.name.padEnd(15)} | Finger: ${v.fingerprint_id} | Voted: ${v.voted}\n`;
+        });
+        document.getElementById("voterList").innerText = output;
+    });
+}
+
+function loadCandidates() {
+    fetch('/view_candidates')
+    .then(res => res.json())
+    .then(data => {
+        let output = data.length > 0 ? "" : "No candidates found.";
+        data.forEach(c => {
+            output += `[ID: ${c.id}] ${c.name.padEnd(15)} | Votes: ${c.votes}\n`;
+        });
+        document.getElementById("candidateList").innerText = output;
+    });
+}
 </script>
 
 </body>

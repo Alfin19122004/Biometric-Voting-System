@@ -134,7 +134,96 @@ def home():
 @app.route('/admin')
 def admin():
     return send_from_directory('../web', 'admin.html')
+@app.route('/add_voter', methods=['POST'])
+def add_voter():
+    data = request.json
+    name = data['name']
+    fingerprint_id = data['fingerprint_id']
 
+    conn = sqlite3.connect("voting.db")
+    c = conn.cursor()
+    c.execute("INSERT INTO voters (name, fingerprint_id, voted) VALUES (?, ?, 0)", (name, fingerprint_id))
+    conn.commit()
+    conn.close()
+
+    return {"status": "voter added"}
+
+
+@app.route('/delete_voter', methods=['POST'])
+def delete_voter():
+    data = request.json
+    fingerprint_id = data['fingerprint_id']
+
+    conn = sqlite3.connect("voting.db")
+    c = conn.cursor()
+    c.execute("DELETE FROM voters WHERE fingerprint_id=?", (fingerprint_id,))
+    conn.commit()
+    conn.close()
+
+    return {"status": "voter deleted"}
+
+
+@app.route('/add_candidate', methods=['POST'])
+def add_candidate():
+    data = request.json
+    name = data['name']
+
+    conn = sqlite3.connect("voting.db")
+    c = conn.cursor()
+    c.execute("INSERT INTO candidates (name, votes) VALUES (?, 0)", (name,))
+    conn.commit()
+    conn.close()
+
+    return {"status": "candidate added"}
+
+
+@app.route('/delete_candidate', methods=['POST'])
+def delete_candidate():
+    data = request.json
+    name = data['name']
+
+    conn = sqlite3.connect("voting.db")
+    c = conn.cursor()
+    c.execute("DELETE FROM candidates WHERE name=?", (name,))
+    conn.commit()
+    conn.close()
+
+    return {"status": "candidate deleted"}
+
+# 👥 VIEW ALL VOTERS
+@app.route('/view_voters')
+def view_voters():
+    conn = sqlite3.connect("voting.db")
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+
+    rows = c.execute("SELECT * FROM voters").fetchall()
+    conn.close()
+
+    return jsonify([dict(r) for r in rows])
+
+
+# 🧑‍💼 VIEW ALL CANDIDATES
+@app.route('/view_candidates')
+def view_candidates():
+    conn = sqlite3.connect("voting.db")
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+
+    rows = c.execute("SELECT * FROM candidates").fetchall()
+    conn.close()
+
+    return jsonify([dict(r) for r in rows])
+@app.route('/reset_votes', methods=['POST'])
+def reset_votes():
+    conn = sqlite3.connect("voting.db")
+    c = conn.cursor()
+    c.execute("UPDATE voters SET voted=0")
+    c.execute("UPDATE candidates SET votes=0")
+    conn.commit()
+    conn.close()
+
+    return {"status": "votes reset"}
 @app.route('/result')
 def result():
     return send_from_directory('../web', 'result.html')
