@@ -40,7 +40,7 @@ const char* ssid = "RH-2.4G-BE0A30";
 const char* password = "44953BBE0A30";
 
 // ============ SERVER ============
-String server = "http://192.168.1.3:5000";
+String server = "https://biometric-voting.onrender.com";
 
 String state = "Tamil Nadu";
 String district = "Chennai";
@@ -500,8 +500,11 @@ int getFingerprintID() {
 
 // ============ SERVER VERIFICATION ============
 bool verifyFromServer(int fid) {
+  WiFiClientSecure client;
+  client.setInsecure();  // Ignore SSL certificate
+
   HTTPClient http;
-  http.begin(server + "/verify_fingerprint");
+  http.begin(client, server + "/verify_fingerprint");
   http.addHeader("Content-Type", "application/json");
 
   String json = "{\"fingerprint_id\":" + String(fid) +
@@ -517,7 +520,7 @@ bool verifyFromServer(int fid) {
   Serial.println("Response Code: " + String(code));
   Serial.println("Response Body: " + response);
 
-  DynamicJsonDocument doc(512);
+  DynamicJsonDocument doc(2048);
   DeserializationError error = deserializeJson(doc, response);
 
   if (error) {
@@ -739,7 +742,23 @@ void setup() {
     delay(3000);
     ESP.restart();
   }
+Serial.println("Testing server connection...");
 
+WiFiClientSecure client;
+client.setInsecure();
+HTTPClient http;
+
+http.begin(client, server + "/live_stats");
+int code = http.GET();
+
+if (code > 0) {
+  Serial.println("Server Connected!");
+  Serial.println(http.getString());
+} else {
+  Serial.println("Server Not Reachable!");
+}
+
+http.end();
   Serial.println("========== SYSTEM READY ==========\n");
   showWelcomeScreen();
 }

@@ -30,10 +30,10 @@
 
         .admin-container {
             display: grid;
-            grid-template-columns: 350px 1fr;
+            grid-template-columns: 320px 1fr;
             gap: 2rem;
             width: 100%;
-            max-width: 1300px;
+            max-width: 1400px;
         }
 
         .card {
@@ -44,52 +44,42 @@
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
 
-        /* --- Tooltip Logic --- */
-        [data-tooltip] {
-            position: relative;
-            cursor: pointer;
-        }
-
+        /* --- Tooltip System --- */
+        [data-tooltip] { position: relative; }
         [data-tooltip]::after {
             content: attr(data-tooltip);
             position: absolute;
-            bottom: 125%;
-            left: 50%;
+            bottom: 110%; left: 50%;
             transform: translateX(-50%) scale(0.9);
             background: #1e293b;
             color: white;
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 0.7rem;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.65rem;
             white-space: nowrap;
             opacity: 0;
             visibility: hidden;
-            transition: all 0.2s;
+            transition: 0.2s;
             border: 1px solid var(--accent);
             z-index: 100;
-            pointer-events: none;
         }
+        [data-tooltip]:hover::after { opacity: 1; visibility: visible; transform: translateX(-50%) scale(1); }
 
-        [data-tooltip]:hover::after {
-            opacity: 1;
-            visibility: visible;
-            transform: translateX(-50%) scale(1);
-        }
-
-        /* --- Typography & Elements --- */
         h1 { font-size: 1.4rem; font-weight: 800; margin-bottom: 0.5rem; text-align: center; }
-        h2 { font-size: 0.8rem; text-transform: uppercase; color: var(--accent); margin: 1.5rem 0 1rem; letter-spacing: 1px; border-bottom: 1px solid var(--glass-border); padding-bottom: 5px; }
+        h2 { font-size: 0.75rem; text-transform: uppercase; color: var(--accent); margin: 1.5rem 0 0.8rem; letter-spacing: 1.5px; border-bottom: 1px solid var(--glass-border); padding-bottom: 5px; }
         
         .shield-icon { width: 40px; height: 40px; background: rgba(59, 130, 246, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; color: var(--accent); }
 
         input {
             width: 100%; padding: 10px; background: #1e293b; border: 1px solid var(--glass-border);
-            border-radius: 8px; color: white; font-size: 0.85rem; margin-bottom: 8px;
+            border-radius: 8px; color: white; font-size: 0.85rem; margin-bottom: 8px; box-sizing: border-box;
         }
 
+        .btn-group { display: flex; gap: 8px; margin-bottom: 1rem; }
+        
         button {
-            width: 100%; padding: 10px; border-radius: 8px; border: none; font-weight: 700;
-            font-size: 0.8rem; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;
+            flex: 1; padding: 10px; border-radius: 8px; border: none; font-weight: 700;
+            font-size: 0.75rem; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center;
         }
 
         .btn-primary { background: var(--accent); color: white; }
@@ -97,23 +87,15 @@
         .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px dashed var(--danger); }
         button:hover { filter: brightness(1.2); transform: translateY(-1px); }
 
-        /* --- Viewer (Terminal Style) --- */
         pre {
-            background: #000;
-            color: #10b981;
-            padding: 15px;
-            border-radius: 12px;
-            font-family: 'Fira Code', monospace;
-            font-size: 0.75rem;
-            max-height: 200px;
-            overflow-y: auto;
-            border: 1px solid #1e293b;
-            margin-top: 10px;
+            background: #000; color: #10b981; padding: 15px; border-radius: 12px;
+            font-family: 'Fira Code', monospace; font-size: 0.75rem;
+            max-height: 250px; overflow-y: auto; border: 1px solid #1e293b; margin-top: 10px;
         }
 
-        .grid-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        .grid-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
 
-        @media (max-width: 1000px) { .admin-container { grid-template-columns: 1fr; } .grid-panel { grid-template-columns: 1fr; } }
+        @media (max-width: 1100px) { .admin-container { grid-template-columns: 1fr; } .grid-panel { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
@@ -123,14 +105,14 @@
     <aside class="card">
         <div class="shield-icon">🛡️</div>
         <h1>System Master</h1>
-        <p style="text-align:center; color:var(--text-dim); font-size:0.7rem; text-transform:uppercase; margin-bottom:2rem;">Secure Access Only</p>
+        <p style="text-align:center; color:var(--text-dim); font-size:0.7rem; margin-bottom:1.5rem;">VOTING SYSTEM v3.0</p>
 
         <input type="password" id="pass" placeholder="Admin Key">
         
         <div style="display:flex; flex-direction:column; gap:10px;">
-            <button class="btn-primary" data-tooltip="Make results public for all users" onclick="publish()">Publish Results</button>
-            <button class="btn-outline" data-tooltip="Stop all voting and result viewing" onclick="lock()">Lock Portal</button>
-            <button class="btn-danger" data-tooltip="Wipe all voters, candidates, and logs" onclick="resetElection()">Full System Reset</button>
+            <button class="btn-primary" data-tooltip="Push data to public dashboard" onclick="publish()">Publish Results</button>
+            <button class="btn-outline" style="color:var(--warning)" data-tooltip="Prevent further voting activity" onclick="lock()">Lock Results</button>
+            <button class="btn-danger" data-tooltip="CRITICAL: Deletes all DB records" onclick="resetElection()">Hard Reset System</button>
         </div>
     </aside>
 
@@ -138,27 +120,29 @@
         <div class="grid-panel">
             
             <div>
-                <h2>Voter Registration</h2>
-                <input type="text" id="voterName" placeholder="Voter Name">
+                <h2>Voter Records</h2>
+                <input type="text" id="voterName" placeholder="Full Name">
                 <input type="number" id="fingerID" placeholder="Fingerprint ID">
-                <button class="btn-primary" data-tooltip="Link a name to a fingerprint ID" onclick="addVoter()">Add Voter</button>
-
-                <h2>Candidate Setup</h2>
-                <input type="text" id="candidateName" placeholder="Candidate Name">
-                <button class="btn-primary" data-tooltip="Add a new person to the ballot" onclick="addCandidate()">Add Candidate</button>
-                
-                <h2 style="color:var(--danger)">Danger Zone</h2>
-                <button class="btn-danger" data-tooltip="Set all candidate vote counts to zero" onclick="resetVotes()">Reset All Votes</button>
+                <div class="btn-group">
+                    <button class="btn-primary" data-tooltip="Register new user to fingerprint DB" onclick="addVoter()">Add</button>
+                    <button class="btn-outline" data-tooltip="Refresh voter list below" onclick="loadVoters()">View</button>
+                    <button class="btn-danger" data-tooltip="Delete voter by Fingerprint ID" onclick="deleteVoter()">Delete</button>
+                </div>
+                <pre id="voterList">Voter logs ready...</pre>
             </div>
 
             <div>
-                <h2>Registered Voters</h2>
-                <button class="btn-outline" data-tooltip="Fetch voter database and voting status" onclick="loadVoters()">Show Voters List</button>
-                <pre id="voterList">System ready...</pre>
+                <h2>Candidate Ballot</h2>
+                <input type="text" id="candidateName" placeholder="Candidate Name">
+                <div class="btn-group">
+                    <button class="btn-primary" data-tooltip="Add name to election roster" onclick="addCandidate()">Add</button>
+                    <button class="btn-outline" data-tooltip="Refresh candidate counts" onclick="loadCandidates()">View</button>
+                    <button class="btn-danger" data-tooltip="Remove candidate from ballot" onclick="deleteCandidate()">Delete</button>
+                </div>
+                <pre id="candidateList">Candidate status ready...</pre>
 
-                <h2>Candidate Status</h2>
-                <button class="btn-outline" data-tooltip="Fetch all candidates and current tallies" onclick="loadCandidates()">Show Candidates List</button>
-                <pre id="candidateList">Waiting for fetch...</pre>
+                <h2 style="color:var(--warning)">Session Reset</h2>
+                <button class="btn-outline" style="border-style:dashed; color:var(--warning)" data-tooltip="Clears all current vote tallies to zero" onclick="resetVotes()">Zero-Out All Votes</button>
             </div>
 
         </div>
@@ -166,83 +150,66 @@
 </div>
 
 <script>
-// --- AUTH & MASTER FUNCTIONS ---
+// --- AUTH ---
+function pass() { return document.getElementById("pass").value; }
+
+// --- SYSTEM COMMANDS ---
 function publish(){
-    fetch("/publish_results",{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({password:document.getElementById("pass").value})
-    }).then(res=>res.json()).then(data=>alert(data.status));
+    fetch("/publish_results",{ method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({password:pass()}) })
+    .then(res=>res.json()).then(data=>alert(data.status));
 }
-
 function lock(){
-    fetch("/lock_results",{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({password:document.getElementById("pass").value})
-    }).then(res=>res.json()).then(data=>alert(data.status));
+    fetch("/lock_results",{ method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({password:pass()}) })
+    .then(res=>res.json()).then(data=>alert(data.status));
 }
-
 function resetElection(){
-    if(confirm("DANGER: This wipes EVERYTHING. Continue?")){
-        fetch("/reset_all",{
-            method:"POST",
-            headers:{"Content-Type":"application/json"},
-            body:JSON.stringify({password:document.getElementById("pass").value})
-        }).then(res=>res.json()).then(data=>alert(data.status));
+    if(confirm("Confirm Full Reset?")) {
+        fetch("/reset_all",{ method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({password:pass()}) })
+        .then(res=>res.json()).then(data=>alert(data.status));
     }
 }
 
-// --- DATABASE FUNCTIONS ---
+// --- VOTER OPERATIONS ---
 function addVoter() {
-    fetch('/add_voter', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-            name: document.getElementById('voterName').value,
-            fingerprint_id: document.getElementById('fingerID').value
-        })
+    fetch('/add_voter', { method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ name: document.getElementById('voterName').value, fingerprint_id: document.getElementById('fingerID').value })
     }).then(res => res.json()).then(data => alert(data.status));
 }
+function deleteVoter() {
+    fetch('/delete_voter', { method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ fingerprint_id: document.getElementById('fingerID').value }) // Uses FingerID from input
+    }).then(res => res.json()).then(data => alert(data.status));
+}
+function loadVoters() {
+    fetch('/view_voters').then(res => res.json()).then(data => {
+        let output = "";
+        data.forEach(v => output += `[ID: ${v.id}] ${v.name.padEnd(12)} | Finger: ${v.fingerprint_id} | Voted: ${v.voted}\n`);
+        document.getElementById("voterList").innerText = output || "No records.";
+    });
+}
 
+// --- CANDIDATE OPERATIONS ---
 function addCandidate() {
-    fetch('/add_candidate', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+    fetch('/add_candidate', { method: 'POST', headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ name: document.getElementById('candidateName').value })
     }).then(res => res.json()).then(data => alert(data.status));
 }
-
-function resetVotes() {
-    if(confirm("Reset all current vote counts?")){
-        fetch('/reset_votes', { method: 'POST' })
-        .then(res => res.json()).then(data => alert(data.status));
-    }
+function deleteCandidate() {
+    fetch('/delete_candidate', { method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ name: document.getElementById('candidateName').value })
+    }).then(res => res.json()).then(data => alert(data.status));
 }
-
-// --- VIEWING FUNCTIONS ---
-function loadVoters() {
-    fetch('/view_voters')
-    .then(res => res.json())
-    .then(data => {
-        let output = data.length > 0 ? "" : "No voters found.";
-        data.forEach(v => {
-            output += `[ID: ${v.id}] ${v.name.padEnd(15)} | Finger: ${v.fingerprint_id} | Voted: ${v.voted}\n`;
-        });
-        document.getElementById("voterList").innerText = output;
-    });
-}
-
 function loadCandidates() {
-    fetch('/view_candidates')
-    .then(res => res.json())
-    .then(data => {
-        let output = data.length > 0 ? "" : "No candidates found.";
-        data.forEach(c => {
-            output += `[ID: ${c.id}] ${c.name.padEnd(15)} | Votes: ${c.votes}\n`;
-        });
-        document.getElementById("candidateList").innerText = output;
+    fetch('/view_candidates').then(res => res.json()).then(data => {
+        let output = "";
+        data.forEach(c => output += `[ID: ${c.id}] ${c.name.padEnd(12)} | Votes: ${c.votes}\n`);
+        document.getElementById("candidateList").innerText = output || "No records.";
     });
+}
+function resetVotes() {
+    if(confirm("Zero-out all current votes?")) {
+        fetch('/reset_votes', { method: 'POST' }).then(res => res.json()).then(data => alert(data.status));
+    }
 }
 </script>
 
