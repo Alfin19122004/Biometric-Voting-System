@@ -5,6 +5,7 @@
 #include <Adafruit_Fingerprint.h>
 #include <HardwareSerial.h>
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 
@@ -520,7 +521,7 @@ bool verifyFromServer(int fid) {
   Serial.println("Response Code: " + String(code));
   Serial.println("Response Body: " + response);
 
-  DynamicJsonDocument doc(2048);
+  DynamicJsonDocument doc(1024);
   DeserializationError error = deserializeJson(doc, response);
 
   if (error) {
@@ -557,6 +558,8 @@ bool verifyFromServer(int fid) {
 
 // ============ GET CANDIDATES ============
 void getCandidates() {
+  WiFiClientSecure client;
+  client.setInsecure();
   // Clear arrays
   for (int i = 0; i < 5; i++) {
     candidates[i].id = -1;
@@ -610,6 +613,9 @@ void getCandidates() {
 
 // ============ SEND VOTE ============
 void sendVote(int indexSelected) {
+  WiFiClientSecure client;
+  client.setInsecure();
+
   int candidateID = candidates[indexSelected].id;
   String candidateName = candidates[indexSelected].name;
 
