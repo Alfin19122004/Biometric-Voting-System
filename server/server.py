@@ -3,17 +3,22 @@ from flask_cors import CORS
 import sqlite3
 import os
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='../web')
 CORS(app)
 
+# Database path for Render
+DB_PATH = "/opt/render/project/src/server/voting.db"
+
+# Result lock
 RESULT_LOCK = True
 
+# ---------------- DATABASE CONNECTION ----------------
 def db():
-    conn = sqlite3.connect('voting.db')
+    conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
 
-# 🔐 VERIFY FINGERPRINT
+# ---------------- VERIFY FINGERPRINT ----------------
 @app.route('/verify_fingerprint', methods=['POST'])
 def verify():
     data = request.json
@@ -41,7 +46,7 @@ def verify():
         "name": voter["name"]
     })
 
-# 📋 GET CANDIDATES
+# ---------------- GET CANDIDATES ----------------
 @app.route('/get_candidates', methods=['POST'])
 def get_candidates():
     data = request.json
@@ -54,7 +59,7 @@ def get_candidates():
 
     return jsonify([dict(r) for r in rows])
 
-# 🗳️ VOTE
+# ---------------- VOTE ----------------
 @app.route('/vote', methods=['POST'])
 def vote():
     data = request.json
@@ -71,9 +76,11 @@ def vote():
     c.execute("UPDATE candidates SET votes = votes + 1 WHERE id=?", (candidate_id,))
 
     conn.commit()
+    conn.close()
+
     return jsonify({"status": "success"})
 
-# 📊 LIVE STATS
+# ---------------- LIVE STATS ----------------
 @app.route('/live_stats')
 def stats():
     conn = db()
@@ -87,7 +94,7 @@ def stats():
         "total_votes": total_votes
     })
 
-# 🔒 PUBLISH RESULTS
+# ---------------- PUBLISH RESULTS ----------------
 @app.route('/publish_results', methods=['POST'])
 def publish():
     global RESULT_LOCK
@@ -97,6 +104,19 @@ def publish():
         RESULT_LOCK = False
         return jsonify({"status": "unlocked"})
     return jsonify({"status": "wrong_password"})
+
+# ---------------- LOCK RESULTS ----------------
+@app.route('/lock_results', methods=['POST'])
+def lock():
+    global RESULT_LOCK
+    password = request.json.get("password")
+
+    if password == "admin123":
+        RESULT_LOCK = True
+        return jsonify({"status": "locked"})
+    return jsonify({"status": "wrong_password"})
+
+# ---------------- RESET ALL ----------------
 @app.route('/reset_all', methods=['POST'])
 def reset_all():
     password = request.json.get("password")
@@ -115,7 +135,8 @@ def reset_all():
     conn.close()
 
     return jsonify({"status": "reset_done"})
-# 📊 RESULTS DATA
+
+# ---------------- RESULTS DATA ----------------
 @app.route('/results_data')
 def results_data():
     if RESULT_LOCK:
@@ -127,35 +148,32 @@ def results_data():
 
     return jsonify([dict(r) for r in rows])
 
-# 🌐 WEB PAGES
-@app.route('/')
-def home():
-    return send_from_directory('../web', 'index.html')
-
-@app.route('/admin')
-def admin():
-    return send_from_directory('../web', 'admin.html')
+# ---------------- ADD VOTER ----------------
 @app.route('/add_voter', methods=['POST'])
 def add_voter():
     data = request.json
     name = data['name']
     fingerprint_id = data['fingerprint_id']
+    state = data['state']
+    district = data['district']
+    constituency = data['constituency']
 
-    conn = sqlite3.connect("voting.db")
+    conn = db()
     c = conn.cursor()
-    c.execute("INSERT INTO voters (name, fingerprint_id, voted) VALUES (?, ?, 0)", (name, fingerprint_id))
+    c.execute("INSERT INTO voters (name, fingerprint_id, state, district, constituency, voted) VALUES (?, ?, ?, ?, ?, 0)",
+              (name, fingerprint_id, state, district, constituency))
     conn.commit()
     conn.close()
 
     return {"status": "voter added"}
 
-
+# ---------------- DELETE VOTER ----------------
 @app.route('/delete_voter', methods=['POST'])
 def delete_voter():
     data = request.json
     fingerprint_id = data['fingerprint_id']
 
-    conn = sqlite3.connect("voting.db")
+    conn = db()
     c = conn.cursor()
     c.execute("DELETE FROM voters WHERE fingerprint_id=?", (fingerprint_id,))
     conn.commit()
@@ -163,27 +181,32 @@ def delete_voter():
 
     return {"status": "voter deleted"}
 
-
+# ---------------- ADD CANDIDATE ----------------
 @app.route('/add_candidate', methods=['POST'])
 def add_candidate():
     data = request.json
     name = data['name']
+    party = data['party']
+    state = data['state']
+    district = data['district']
+    constituency = data['constituency']
 
-    conn = sqlite3.connect("voting.db")
+    conn = db()
     c = conn.cursor()
-    c.execute("INSERT INTO candidates (name, votes) VALUES (?, 0)", (name,))
+    c.execute("INSERT INTO candidates (name, party, state, district, constituency, votes) VALUES (?, ?, ?, ?, ?, 0)",
+              (name, party, state, district, constituency))
     conn.commit()
     conn.close()
 
     return {"status": "candidate added"}
 
-
+# ---------------- DELETE CANDIDATE ----------------
 @app.route('/delete_candidate', methods=['POST'])
 def delete_candidate():
     data = request.json
     name = data['name']
 
-    conn = sqlite3.connect("voting.db")
+    conn = db()
     c = conn.cursor()
     c.execute("DELETE FROM candidates WHERE name=?", (name,))
     conn.commit()
@@ -191,53 +214,39 @@ def delete_candidate():
 
     return {"status": "candidate deleted"}
 
-# 👥 VIEW ALL VOTERS
+# ---------------- VIEW VOTERS ----------------
 @app.route('/view_voters')
 def view_voters():
-    conn = sqlite3.connect("voting.db")
-    conn.row_factory = sqlite3.Row
+    conn = db()
     c = conn.cursor()
-
     rows = c.execute("SELECT * FROM voters").fetchall()
     conn.close()
 
     return jsonify([dict(r) for r in rows])
 
-
-# 🧑‍💼 VIEW ALL CANDIDATES
+# ---------------- VIEW CANDIDATES ----------------
 @app.route('/view_candidates')
 def view_candidates():
-    conn = sqlite3.connect("voting.db")
-    conn.row_factory = sqlite3.Row
+    conn = db()
     c = conn.cursor()
-
     rows = c.execute("SELECT * FROM candidates").fetchall()
     conn.close()
 
     return jsonify([dict(r) for r in rows])
-@app.route('/reset_votes', methods=['POST'])
-def reset_votes():
-    conn = sqlite3.connect("voting.db")
-    c = conn.cursor()
-    c.execute("UPDATE voters SET voted=0")
-    c.execute("UPDATE candidates SET votes=0")
-    conn.commit()
-    conn.close()
 
-    return {"status": "votes reset"}
+# ---------------- WEB PAGES ----------------
+@app.route('/')
+def home():
+    return send_from_directory('../web', 'index.html')
+
+@app.route('/admin')
+def admin():
+    return send_from_directory('../web', 'admin.html')
+
 @app.route('/result')
 def result():
     return send_from_directory('../web', 'result.html')
-# 🔒 LOCK RESULTS AGAIN
-@app.route('/lock_results', methods=['POST'])
-def lock():
-    global RESULT_LOCK
-    password = request.json.get("password")
 
-    if password == "admin123":
-        RESULT_LOCK = True
-        return jsonify({"status": "locked"})
-    return jsonify({"status": "wrong_password"})
-
-port = int(os.environ.get("PORT", 5000))
-app.run(host="0.0.0.0", port=port)
+# ---------------- RUN (FOR LOCAL ONLY) ----------------
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
