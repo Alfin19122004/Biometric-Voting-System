@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Control | Secure Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #020617;
+            --card: #0f172a;
+            --accent: #3b82f6;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --success: #10b981;
+            --text: #f8fafc;
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            background-color: var(--bg);
+            background-image: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.1) 0%, transparent 80%);
+            color: var(--text);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .admin-card {
+            background: var(--card);
+            padding: 3rem;
+            border-radius: 32px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Top Security Glow */
+        .admin-card::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 4px;
+            background: linear-gradient(90deg, var(--accent), var(--danger), var(--warning));
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            letter-spacing: -1px;
+        }
+
+        p.subtitle {
+            color: #94a3b8;
+            font-size: 0.85rem;
+            margin-bottom: 2.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .input-group {
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        input[type="password"] {
+            width: 100%;
+            padding: 16px;
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            color: white;
+            font-size: 1rem;
+            text-align: center;
+            transition: all 0.3s;
+            box-sizing: border-box;
+        }
+
+        input[type="password"]:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: rgba(30, 41, 59, 0.8);
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
+        }
+
+        .actions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            border: none;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        /* Specific Button Styles */
+        .btn-publish {
+            background: var(--accent);
+            color: white;
+        }
+        .btn-publish:hover {
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .btn-lock {
+            background: transparent;
+            color: var(--warning);
+            border: 1px solid var(--warning);
+        }
+        .btn-lock:hover {
+            background: rgba(245, 158, 11, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .btn-reset {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            margin-top: 10px;
+            font-size: 0.8rem;
+            border: 1px dashed var(--danger);
+        }
+        .btn-reset:hover {
+            background: var(--danger);
+            color: white;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        /* Decorative "Lock" Icon Placeholder */
+        .shield-icon {
+            width: 60px;
+            height: 60px;
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            color: var(--accent);
+            font-size: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="admin-card">
+    <div class="shield-icon">🛡️</div>
+    <h1>Admin Control</h1>
+    <p class="subtitle">Secure Election Management</p>
+
+    <div class="input-group">
+        <input type="password" id="pass" placeholder="Authorization Password">
+    </div>
+
+    <div class="actions">
+        <button class="btn-publish" onclick="publish()">
+            Publish Live Results
+        </button>
+        
+        <button class="btn-lock" onclick="lock()">
+            Lock All Entries
+        </button>
+
+        <button class="btn-reset" onclick="resetElection()">
+            Dangerous: Reset Election
+        </button>
+    </div>
+</div>
+
+<script>
+    // Note: I kept your functional logic exactly the same, 
+    // just wrapped in the new visual structure.
+
+    function publish(){
+        fetch("/publish_results",{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({password:document.getElementById("pass").value})
+        })
+        .then(res=>res.json())
+        .then(data=>alert(data.status));
+    }
+
+    function lock(){
+        fetch("/lock_results",{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({password:document.getElementById("pass").value})
+        })
+        .then(res=>res.json())
+        .then(data=>alert(data.status));
+    }
+
+    function resetElection(){
+        if(confirm("Are you absolutely sure? This will wipe all data.")){
+            fetch("/reset_all",{
+                method:"POST",
+                headers:{"Content-Type":"application/json"},
+                body:JSON.stringify({password:document.getElementById("pass").value})
+            })
+            .then(res=>res.json())
+            .then(data=>alert(data.status));
+        }
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>National Election Portal | Live Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-bg: #020617;
+            --card-bg: #0f172a;
+            --accent: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, 0.5);
+            --live-red: #ef4444;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+        }
+
+        body {
+            background-color: var(--primary-bg);
+            background-image: 
+                radial-gradient(circle at 0% 0%, rgba(59, 130, 246, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 100% 100%, rgba(239, 68, 68, 0.05) 0%, transparent 50%);
+            color: var(--text-main);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* --- Navigation --- */
+        nav {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 1rem 8%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo { 
+            font-weight: 800; 
+            font-size: 1.2rem;
+            letter-spacing: -1px;
+            background: linear-gradient(to right, #fff, var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .admin-link {
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--glass-border);
+            transition: all 0.3s;
+        }
+
+        .admin-link:hover {
+            border-color: var(--accent);
+            color: var(--text-main);
+        }
+
+        /* --- Main Layout --- */
+        .wrapper {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 2.5rem;
+            padding: 3rem 8%;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        /* --- Sidebar Controls --- */
+        .sidebar {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 24px;
+            border: 1px solid var(--glass-border);
+            height: fit-content;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        }
+
+        .sidebar h3 {
+            font-size: 0.9rem;
+            color: var(--text-main);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .field { margin-bottom: 1.5rem; }
+        .field label { 
+            display: block; 
+            font-size: 0.65rem; 
+            font-weight: 800; 
+            color: var(--accent); 
+            margin-bottom: 8px; 
+            text-transform: uppercase; 
+            letter-spacing: 1px;
+        }
+        
+        select {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            background: #1e293b;
+            border: 1px solid var(--glass-border);
+            color: white;
+            font-size: 0.9rem;
+            cursor: pointer;
+            appearance: none;
+            transition: border 0.3s;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        /* --- Main Display Card --- */
+        .hero-card {
+            background: var(--card-bg);
+            padding: 3.5rem 2rem;
+            border-radius: 32px;
+            border: 1px solid var(--glass-border);
+            position: relative;
+            overflow: hidden;
+            text-align: center;
+            box-shadow: 0 25px 60px -12px rgba(0,0,0,0.5);
+        }
+
+        .hero-card::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 4px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+        }
+
+        .live-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--live-red);
+            padding: 6px 16px;
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            margin-bottom: 2rem;
+        }
+
+        .dot {
+            height: 8px;
+            width: 8px;
+            background-color: var(--live-red);
+            border-radius: 50%;
+            animation: pulse-red 1.5s infinite;
+        }
+
+        @keyframes pulse-red {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { transform: scale(1.1); box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        h1 { 
+            font-size: clamp(2rem, 5vw, 3.5rem); 
+            font-weight: 800;
+            letter-spacing: -2px;
+            margin-bottom: 1rem;
+            color: white;
+        }
+
+        .stats-display {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 4rem;
+            margin: 3rem 0;
+        }
+
+        .stat-item h2 { 
+            font-size: clamp(2.5rem, 6vw, 4.5rem); 
+            font-weight: 800; 
+            line-height: 1;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-item p { 
+            font-size: 0.8rem; 
+            font-weight: 600; 
+            color: var(--text-dim); 
+            text-transform: uppercase; 
+            letter-spacing: 2px;
+        }
+
+        /* --- Progress Bar --- */
+        .progress-container {
+            max-width: 600px;
+            margin: 0 auto 3rem auto;
+            background: rgba(255,255,255,0.05);
+            height: 10px;
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid var(--glass-border);
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--accent), #60a5fa);
+            transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        .btn-results {
+            display: inline-block;
+            background: var(--accent);
+            color: white;
+            text-decoration: none;
+            padding: 16px 40px;
+            border-radius: 14px;
+            font-weight: 700;
+            font-size: 1rem;
+            transition: 0.3s;
+            box-shadow: 0 10px 20px rgba(59, 130, 246, 0.2);
+        }
+
+        .btn-results:hover { 
+            transform: translateY(-3px); 
+            box-shadow: 0 15px 30px rgba(59, 130, 246, 0.4);
+            filter: brightness(1.1);
+        }
+
+        /* --- Responsive Logic --- */
+        @media (max-width: 900px) {
+            .wrapper { grid-template-columns: 1fr; padding: 2rem 5%; }
+            .sidebar { order: 2; }
+            .hero-card { order: 1; padding: 2.5rem 1.5rem; }
+            .stats-display { gap: 2rem; }
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="logo">ELECTION•PRO</div>
+    <a href="/admin" class="admin-link">ADMIN PORTAL</a>
+</nav>
+
+<div class="wrapper">
+    <aside class="sidebar">
+        <h3>FILTERS</h3>
+        <div class="field">
+            <label>State Selection</label>
+            <select id="state" onchange="runUpdate()">
+                <option value="TN">Tamil Nadu</option>
+                <option value="KL">Kerala</option>
+            </select>
+        </div>
+        <div class="field">
+            <label>District</label>
+            <select id="district" onchange="runUpdate()">
+                <option value="Chennai">Chennai</option>
+                <option value="MDU">Madurai</option>
+            </select>
+        </div>
+        <div class="field">
+            <label>Constituency</label>
+            <select id="const" onchange="runUpdate()">
+                <option value="ABC">ABC Constituency</option>
+                <option value="XYZ">XYZ Constituency</option>
+            </select>
+        </div>
+    </aside>
+
+    <main>
+        <div class="hero-card">
+            <div class="live-indicator">
+                <span class="dot"></span> REAL-TIME DATA
+            </div>
+            
+            <h1 id="title">ABC Constituency</h1>
+
+            <div class="stats-display">
+                <div class="stat-item">
+                    <p>Eligible Voters</p>
+                    <h2 id="tv" style="color: white;">0</h2>
+                </div>
+                <div class="stat-item">
+                    <p>Turnout Count</p>
+                    <h2 id="vc" style="color: var(--accent);">0</h2>
+                </div>
+            </div>
+
+            <div class="progress-container">
+                <div id="pb" class="progress-bar"></div>
+            </div>
+
+            <a href="/result" class="btn-results">Election Results</a>
+        </div>
+    </main>
+</div>
+
+<script>
+    function runUpdate() {
+        const s = document.getElementById("state").value;
+        const d = document.getElementById("district").value;
+        const c = document.getElementById("const").value;
+
+        document.getElementById("title").innerText = c + " Constituency";
+
+        // Logic for Data Display
+        if(s === "TN" && d === "Chennai" && c === "ABC") {
+            fetch("/live_stats")
+            .then(res => res.json())
+            .then(data => {
+                updateUI(data.total_voters, data.total_votes);
+            })
+            .catch(e => {
+                // Mock data for static preview
+                updateUI(450200, 312840);
+            });
+        } else {
+            updateUI(0, 0);
+        }
+    }
+
+    function updateUI(total, polled) {
+        const tvEl = document.getElementById("tv");
+        const vcEl = document.getElementById("vc");
+        const pbEl = document.getElementById("pb");
+
+        tvEl.innerText = total.toLocaleString('en-IN');
+        vcEl.innerText = polled.toLocaleString('en-IN');
+
+        // Update progress bar
+        const percent = total > 0 ? (polled / total) * 100 : 0;
+        pbEl.style.width = percent + "%";
+    }
+
+    // Initial run
+    runUpdate();
+    // Refresh every 5 seconds
+    setInterval(runUpdate, 5000);
+</script>
+
+</body>
+</html>
