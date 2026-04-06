@@ -144,7 +144,7 @@
                 </div>
 
                 <h2 style="color: var(--success)">Bulk Import</h2>
-                <textarea id="bulkVoters" placeholder="Name, FingerprintID (One per line)&#10;John Doe, 101&#10;Jane Smith, 102"></textarea>
+                <textarea id="bulkVoters" placeholder="Name, FingerprintID (One per line)&#10;Ex: John Doe, 101"></textarea>
                 <button class="btn-success" style="width: 100%" onclick="addBulkVoters()">Process Bulk Upload</button>
 
                 <h2 style="margin-top: 25px;">Registration Log</h2>
@@ -197,7 +197,7 @@ async function apiCall(endpoint, body = null) {
 // System Controls
 function publish() { apiCall('/publish_results', {password: getPass()}); }
 function lock() { apiCall('/lock_results', {password: getPass()}); }
-function resetElection() { if(confirm("ERASE ALL DATA?")) apiCall('/reset_all', {password: getPass()}); }
+function resetElection() { if(confirm("PERMANENTLY DELETE ALL DATA?")) apiCall('/reset_all', {password: getPass()}); }
 
 function getStats() {
     fetch('/live_stats').then(res => res.json()).then(data => {
@@ -210,6 +210,7 @@ function getStats() {
 // Voter Management
 function addVoter() {
     apiCall('/add_voter', { 
+        password: getPass(),
         name: getVal('vName'), 
         fingerprint_id: getVal('vFID'), 
         state: getVal('vState'), 
@@ -223,45 +224,44 @@ function addBulkVoters() {
     let lines = text.split("\n");
     let voters = [];
 
+    // Capture the location values from the textboxes to use as defaults
+    let defState = getVal('vState');
+    let defDist = getVal('vDist');
+    let defConst = getVal('vConst');
+
     lines.forEach(line => {
         let parts = line.split(",");
-        if(parts.length == 2) {
+        if(parts.length >= 2) {
             voters.push({
                 name: parts[0].trim(),
                 fingerprint_id: parseInt(parts[1].trim()),
-                // Defaulting location fields for bulk upload
-                state: getVal('vState'),
-                district: getVal('vDist'),
-                constituency: getVal('vConst')
+                state: defState,
+                district: defDist,
+                constituency: defConst
             });
         }
     });
 
     if(voters.length === 0) {
-        alert("No valid data found. Format: Name, ID");
+        alert("Format error: Use 'Name, ID' per line.");
         return;
     }
 
-    fetch('/add_bulk_voters', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ voters: voters, password: getPass() })
-    })
-    .then(res => res.json())
-    .then(data => {
-        alert(data.status);
+    apiCall('/add_bulk_voters', { voters: voters, password: getPass() })
+    .then(() => {
         document.getElementById("bulkVoters").value = "";
+        loadVoters(); // Refresh list automatically
     });
 }
 
 function deleteVoter() {
-    apiCall('/delete_voter', { fingerprint_id: getVal('vFID') });
+    apiCall('/delete_voter', { password: getPass(), fingerprint_id: getVal('vFID') });
 }
 
 function loadVoters() {
     fetch('/view_voters').then(res => res.json()).then(data => {
         let out = "";
-        data.forEach(v => out += `[FID:${v.fingerprint_id}] ${v.name.padEnd(10)} | Const: ${v.constituency} | Voted: ${v.voted}\n`);
+        data.forEach(v => out += `[FID:${v.fingerprint_id}] ${v.name.padEnd(12)} | ${v.constituency} | Voted: ${v.voted}\n`);
         document.getElementById('voterList').innerText = out || "No voters registered.";
     });
 }
@@ -269,6 +269,7 @@ function loadVoters() {
 // Candidate Management
 function addCandidate() {
     apiCall('/add_candidate', { 
+        password: getPass(),
         name: getVal('cName'), 
         party: getVal('cParty'), 
         state: getVal('cState'), 
@@ -278,24 +279,20 @@ function addCandidate() {
 }
 
 function deleteCandidate() {
-    apiCall('/delete_candidate', { name: getVal('cName') });
+    apiCall('/delete_candidate', { password: getPass(), name: getVal('cName') });
 }
 
 function loadCandidates() {
     fetch('/view_candidates').then(res => res.json()).then(data => {
         let out = "";
-        data.forEach(c => out += `[${c.party}] ${c.name.padEnd(10)} | Const: ${c.constituency} | Votes: ${c.votes}\n`);
+        data.forEach(c => out += `[${c.party}] ${c.name.padEnd(12)} | ${c.constituency} | Votes: ${c.votes}\n`);
         document.getElementById('candidateList').innerText = out || "No candidates found.";
     });
 }
 
 function resetVotes() {
     if(confirm("Zero-out all current votes?")) {
-        fetch('/reset_votes', { 
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({password: getPass()})
-        }).then(res => res.json()).then(data => alert(data.status));
+        apiCall('/reset_votes', { password: getPass() });
     }
 }
 </script>
