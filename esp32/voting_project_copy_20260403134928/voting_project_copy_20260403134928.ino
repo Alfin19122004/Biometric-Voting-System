@@ -37,9 +37,10 @@ HardwareSerial mySerial(2);
 Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
 
 // ============ WIFI ============
-const char* ssid = "RH-2.4G-BE0A30";
-const char* password = "44953BBE0A30";
-
+// const char* ssid = "RH-2.4G-BE0A30";
+// const char* password = "44953BBE0A30";
+const char* ssid = "Alfin";
+const char* password = ".........";
 // ============ SERVER ============
 String server = "https://biometric-voting.onrender.com";
 

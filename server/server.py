@@ -45,7 +45,29 @@ def verify():
         "voter_id": voter["id"],
         "name": voter["name"]
     })
+@app.route('/add_bulk_voters', methods=['POST'])
+def add_bulk_voters():
+    data = request.json
+    voters = data['voters']
 
+    conn = sqlite3.connect(DB)
+    c = conn.cursor()
+
+    added = 0
+    skipped = 0
+
+    for v in voters:
+        try:
+            c.execute("INSERT INTO voters(name, fingerprint_id) VALUES(?,?)",
+                      (v['name'], v['fingerprint_id']))
+            added += 1
+        except:
+            skipped += 1
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({"status": f"{added} voters added, {skipped} skipped"})
 # ---------------- GET CANDIDATES ----------------
 @app.route('/get_candidates', methods=['POST'])
 def get_candidates():

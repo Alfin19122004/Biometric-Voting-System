@@ -62,11 +62,13 @@
         
         .shield-icon { width: 45px; height: 45px; background: rgba(59, 130, 246, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; color: var(--accent); font-size: 1.2rem; }
 
-        input {
+        input, textarea {
             width: 100%; padding: 12px; background: #1e293b; border: 1px solid var(--glass-border);
             border-radius: 12px; color: white; font-size: 0.9rem; margin-bottom: 10px; outline: none;
+            font-family: inherit;
         }
-        input:focus { border-color: var(--accent); background: #26334d; }
+        textarea { resize: vertical; min-height: 80px; font-family: 'Fira Code', monospace; font-size: 0.8rem; }
+        input:focus, textarea:focus { border-color: var(--accent); background: #26334d; }
 
         .btn-group { display: flex; gap: 10px; margin-bottom: 15px; }
         
@@ -78,6 +80,7 @@
         .btn-primary { background: var(--accent); color: white; }
         .btn-outline { background: transparent; border: 1px solid var(--glass-border); color: white; }
         .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px dashed var(--danger); }
+        .btn-success { background: rgba(16, 185, 129, 0.1); color: var(--success); border: 1px solid var(--success); }
         button:hover { filter: brightness(1.2); transform: translateY(-2px); }
 
         pre {
@@ -139,6 +142,12 @@
                     <button class="btn-outline" data-tip="Update the log display" onclick="loadVoters()">View</button>
                     <button class="btn-danger" data-tip="Delete by Fingerprint ID" onclick="deleteVoter()">Delete</button>
                 </div>
+
+                <h2 style="color: var(--success)">Bulk Import</h2>
+                <textarea id="bulkVoters" placeholder="Name, FingerprintID (One per line)&#10;John Doe, 101&#10;Jane Smith, 102"></textarea>
+                <button class="btn-success" style="width: 100%" onclick="addBulkVoters()">Process Bulk Upload</button>
+
+                <h2 style="margin-top: 25px;">Registration Log</h2>
                 <pre id="voterList">System ready...</pre>
             </div>
 
@@ -155,10 +164,12 @@
                     <button class="btn-outline" data-tip="Update vote tallies below" onclick="loadCandidates()">View</button>
                     <button class="btn-danger" data-tip="Remove candidate by Name" onclick="deleteCandidate()">Delete</button>
                 </div>
+                
+                <h2>Candidate Tally</h2>
                 <pre id="candidateList">Waiting for fetch...</pre>
                 
                 <h2 style="color:var(--warning)">Session Reset</h2>
-                <button class="btn-outline" style="border-style:dashed; color:var(--warning)" data-tip="Set all vote counts to zero" onclick="resetVotes()">Zero-Out Vote Tally</button>
+                <button class="btn-outline" style="border-style:dashed; color:var(--warning); width: 100%" data-tip="Set all vote counts to zero" onclick="resetVotes()">Zero-Out Vote Tally</button>
             </div>
 
         </div>
@@ -183,6 +194,7 @@ async function apiCall(endpoint, body = null) {
     } catch (err) { alert("Connection Error"); }
 }
 
+// System Controls
 function publish() { apiCall('/publish_results', {password: getPass()}); }
 function lock() { apiCall('/lock_results', {password: getPass()}); }
 function resetElection() { if(confirm("ERASE ALL DATA?")) apiCall('/reset_all', {password: getPass()}); }
@@ -195,6 +207,7 @@ function getStats() {
     });
 }
 
+// Voter Management
 function addVoter() {
     apiCall('/add_voter', { 
         name: getVal('vName'), 
@@ -202,6 +215,42 @@ function addVoter() {
         state: getVal('vState'), 
         district: getVal('vDist'), 
         constituency: getVal('vConst') 
+    });
+}
+
+function addBulkVoters() {
+    let text = document.getElementById("bulkVoters").value;
+    let lines = text.split("\n");
+    let voters = [];
+
+    lines.forEach(line => {
+        let parts = line.split(",");
+        if(parts.length == 2) {
+            voters.push({
+                name: parts[0].trim(),
+                fingerprint_id: parseInt(parts[1].trim()),
+                // Defaulting location fields for bulk upload
+                state: getVal('vState'),
+                district: getVal('vDist'),
+                constituency: getVal('vConst')
+            });
+        }
+    });
+
+    if(voters.length === 0) {
+        alert("No valid data found. Format: Name, ID");
+        return;
+    }
+
+    fetch('/add_bulk_voters', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ voters: voters, password: getPass() })
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.status);
+        document.getElementById("bulkVoters").value = "";
     });
 }
 
@@ -217,6 +266,7 @@ function loadVoters() {
     });
 }
 
+// Candidate Management
 function addCandidate() {
     apiCall('/add_candidate', { 
         name: getVal('cName'), 
@@ -241,7 +291,11 @@ function loadCandidates() {
 
 function resetVotes() {
     if(confirm("Zero-out all current votes?")) {
-        fetch('/reset_votes', { method: 'POST' }).then(res => res.json()).then(data => alert(data.status));
+        fetch('/reset_votes', { 
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({password: getPass()})
+        }).then(res => res.json()).then(data => alert(data.status));
     }
 }
 </script>
