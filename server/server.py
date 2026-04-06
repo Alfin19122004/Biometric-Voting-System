@@ -1,188 +1,304 @@
-from flask import Flask, request, jsonify, send_from_directory
-from flask_cors import CORS
-import sqlite3
-import os
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Control | Secure Voting System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #020617;
+            --card: #0f172a;
+            --accent: #3b82f6;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --success: #10b981;
+            --text: #f8fafc;
+            --text-dim: #94a3b8;
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
 
-app = Flask(__name__, static_folder='../web')
-CORS(app)
+        * { box-sizing: border-box; transition: all 0.2s ease-in-out; }
 
-# Database path - Ensure this directory exists on your server
-DB_PATH = "voting.db" 
+        body {
+            background-color: var(--bg);
+            background-image: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.08) 0%, transparent 80%);
+            color: var(--text);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            margin: 0; padding: 15px;
+            min-height: 100vh;
+            display: flex; justify-content: center;
+        }
 
-# Result lock status
-RESULT_LOCK = True
-ADMIN_PASS = "admin123"
+        .admin-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            width: 100%;
+            max-width: 1300px;
+        }
 
-# ---------------- DATABASE HELPER ----------------
-def db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+        .card {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 24px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            height: fit-content;
+        }
 
-# ---------------- VOTER VERIFICATION ----------------
-@app.route('/verify_fingerprint', methods=['POST'])
-def verify():
-    data = request.json
-    fid = data['fingerprint_id']
-    state = data['state']
-    district = data['district']
-    constituency = data['constituency']
+        [data-tip] { position: relative; }
+        @media (min-width: 1024px) {
+            [data-tip]:hover::after {
+                content: attr(data-tip);
+                position: absolute; bottom: 120%; left: 50%; transform: translateX(-50%);
+                background: #1e293b; color: white; padding: 8px 14px; border-radius: 8px;
+                font-size: 0.7rem; white-space: nowrap; border: 1px solid var(--accent); z-index: 50;
+            }
+        }
 
-    conn = db()
-    c = conn.cursor()
-    c.execute("SELECT * FROM voters WHERE fingerprint_id=? AND state=? AND district=? AND constituency=?",
-              (fid, state, district, constituency))
-    voter = c.fetchone()
-    conn.close()
+        h1 { font-size: 1.4rem; font-weight: 800; margin-bottom: 20px; text-align: center; color: white; }
+        h2 { font-size: 0.75rem; text-transform: uppercase; color: var(--accent); letter-spacing: 1.5px; margin: 25px 0 10px; border-bottom: 1px solid var(--glass-border); padding-bottom: 8px; }
+        
+        .shield-icon { width: 45px; height: 45px; background: rgba(59, 130, 246, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; color: var(--accent); font-size: 1.2rem; }
 
-    if voter is None:
-        return jsonify({"status": "invalid"})
+        input, textarea {
+            width: 100%; padding: 12px; background: #1e293b; border: 1px solid var(--glass-border);
+            border-radius: 12px; color: white; font-size: 0.9rem; margin-bottom: 10px; outline: none;
+            font-family: inherit;
+        }
+        textarea { resize: vertical; min-height: 80px; font-family: 'Fira Code', monospace; font-size: 0.8rem; }
+        input:focus, textarea:focus { border-color: var(--accent); background: #26334d; }
 
-    if voter["voted"] == 1:
-        return jsonify({"status": "already_voted"})
+        .btn-group { display: flex; gap: 10px; margin-bottom: 15px; }
+        
+        button {
+            flex: 1; padding: 12px; border-radius: 12px; border: none; font-weight: 700;
+            font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
 
-    return jsonify({
-        "status": "valid",
-        "voter_id": voter["id"],
-        "name": voter["name"]
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-outline { background: transparent; border: 1px solid var(--glass-border); color: white; }
+        .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px dashed var(--danger); }
+        .btn-success { background: rgba(16, 185, 129, 0.1); color: var(--success); border: 1px solid var(--success); }
+        button:hover { filter: brightness(1.2); transform: translateY(-2px); }
+
+        pre {
+            background: #000; color: var(--success); padding: 15px; border-radius: 14px;
+            font-family: 'Fira Code', monospace; font-size: 0.75rem;
+            max-height: 250px; overflow: auto; border: 1px solid #1e293b; line-height: 1.5;
+        }
+
+        .grid-panel { display: grid; grid-template-columns: 1fr; gap: 20px; }
+
+        @media (min-width: 768px) {
+            .grid-panel { grid-template-columns: 1fr 1fr; }
+            h1 { font-size: 1.6rem; }
+        }
+
+        @media (min-width: 1024px) {
+            .admin-container { grid-template-columns: 340px 1fr; align-items: start; }
+            body { padding: 40px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="admin-container">
+    
+    <aside class="card">
+        <div class="shield-icon">🛡️</div>
+        <h1>Master Console</h1>
+        
+        <input type="password" id="pass" placeholder="Admin Key">
+        
+        <div style="display:flex; flex-direction:column; gap:12px;">
+            <button class="btn-primary" data-tip="Release results for live viewing" onclick="publish()">Publish Results</button>
+            <button class="btn-outline" style="color:var(--warning); border-color:var(--warning)" data-tip="Stop voting and result access" onclick="lock()">Lock Results</button>
+            <button class="btn-danger" data-tip="PERMANENT: Erase all database records" onclick="resetElection()">Hard Reset System</button>
+        </div>
+
+        <h2>Live Metrics</h2>
+        <button class="btn-outline" onclick="getStats()">Fetch Real-time Stats</button>
+        <div id="statDisplay" style="font-size: 0.85rem; margin-top: 15px; color: var(--text-dim); line-height: 1.8;">
+            Total Registered: <span style="color:white">--</span> <br> 
+            Total Votes Cast: <span style="color:white">--</span>
+        </div>
+    </aside>
+
+    <main class="card">
+        <div class="grid-panel">
+            
+            <div>
+                <h2>Voter Registration</h2>
+                <input type="text" id="vName" placeholder="Full Name">
+                <input type="number" id="vFID" placeholder="Fingerprint ID">
+                <input type="text" id="vState" placeholder="State" value="Tamil Nadu">
+                <input type="text" id="vDist" placeholder="District" value="Chennai">
+                <input type="text" id="vConst" placeholder="Constituency" value="ABC">
+                
+                <div class="btn-group">
+                    <button class="btn-primary" data-tip="Save new voter to DB" onclick="addVoter()">Add</button>
+                    <button class="btn-outline" data-tip="Update the log display" onclick="loadVoters()">View</button>
+                    <button class="btn-danger" data-tip="Delete by Fingerprint ID" onclick="deleteVoter()">Delete</button>
+                </div>
+
+                <h2 style="color: var(--success)">Bulk Import</h2>
+                <textarea id="bulkVoters" placeholder="Name, FingerprintID (One per line)&#10;John Doe, 101&#10;Jane Smith, 102"></textarea>
+                <button class="btn-success" style="width: 100%" onclick="addBulkVoters()">Process Bulk Upload</button>
+
+                <h2 style="margin-top: 25px;">Registration Log</h2>
+                <pre id="voterList">System ready...</pre>
+            </div>
+
+            <div>
+                <h2>Ballot Management</h2>
+                <input type="text" id="cName" placeholder="Candidate Name">
+                <input type="text" id="cParty" placeholder="Political Party">
+                <input type="text" id="cState" placeholder="State" value="Tamil Nadu">
+                <input type="text" id="cDist" placeholder="District" value="Chennai">
+                <input type="text" id="cConst" placeholder="Constituency" value="ABC">
+
+                <div class="btn-group">
+                    <button class="btn-primary" data-tip="Add candidate to roster" onclick="addCandidate()">Add</button>
+                    <button class="btn-outline" data-tip="Update vote tallies below" onclick="loadCandidates()">View</button>
+                    <button class="btn-danger" data-tip="Remove candidate by Name" onclick="deleteCandidate()">Delete</button>
+                </div>
+                
+                <h2>Candidate Tally</h2>
+                <pre id="candidateList">Waiting for fetch...</pre>
+                
+                <h2 style="color:var(--warning)">Session Reset</h2>
+                <button class="btn-outline" style="border-style:dashed; color:var(--warning); width: 100%" data-tip="Set all vote counts to zero" onclick="resetVotes()">Zero-Out Vote Tally</button>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<script>
+const getVal = (id) => document.getElementById(id).value;
+const getPass = () => document.getElementById('pass').value;
+
+async function apiCall(endpoint, body = null) {
+    const options = {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: body ? JSON.stringify(body) : null
+    };
+    try {
+        const res = await fetch(endpoint, options);
+        const data = await res.json();
+        alert("Server: " + data.status);
+        return data;
+    } catch (err) { alert("Connection Error"); }
+}
+
+// System Controls
+function publish() { apiCall('/publish_results', {password: getPass()}); }
+function lock() { apiCall('/lock_results', {password: getPass()}); }
+function resetElection() { if(confirm("ERASE ALL DATA?")) apiCall('/reset_all', {password: getPass()}); }
+
+function getStats() {
+    fetch('/live_stats').then(res => res.json()).then(data => {
+        document.getElementById('statDisplay').innerHTML = `
+            Total Registered: <span style="color:var(--accent)">${data.total_voters}</span> <br> 
+            Total Votes Cast: <span style="color:var(--success)">${data.total_votes}</span>`;
+    });
+}
+
+// Voter Management
+function addVoter() {
+    apiCall('/add_voter', { 
+        name: getVal('vName'), 
+        fingerprint_id: getVal('vFID'), 
+        state: getVal('vState'), 
+        district: getVal('vDist'), 
+        constituency: getVal('vConst') 
+    });
+}
+
+function addBulkVoters() {
+    let text = document.getElementById("bulkVoters").value;
+    let lines = text.split("\n");
+    let voters = [];
+
+    lines.forEach(line => {
+        let parts = line.split(",");
+        if(parts.length == 2) {
+            voters.push({
+                name: parts[0].trim(),
+                fingerprint_id: parseInt(parts[1].trim()),
+                // Defaulting location fields for bulk upload
+                state: getVal('vState'),
+                district: getVal('vDist'),
+                constituency: getVal('vConst')
+            });
+        }
+    });
+
+    if(voters.length === 0) {
+        alert("No valid data found. Format: Name, ID");
+        return;
+    }
+
+    fetch('/add_bulk_voters', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ voters: voters, password: getPass() })
     })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.status);
+        document.getElementById("bulkVoters").value = "";
+    });
+}
 
-# ---------------- BULK REGISTRATION ----------------
-@app.route('/add_bulk_voters', methods=['POST'])
-def add_bulk_voters():
-    data = request.json
-    voters = data.get('voters', [])
-    password = data.get('password')
+function deleteVoter() {
+    apiCall('/delete_voter', { fingerprint_id: getVal('vFID') });
+}
 
-    if password != ADMIN_PASS:
-        return jsonify({"status": "wrong_password"}), 403
+function loadVoters() {
+    fetch('/view_voters').then(res => res.json()).then(data => {
+        let out = "";
+        data.forEach(v => out += `[FID:${v.fingerprint_id}] ${v.name.padEnd(10)} | Const: ${v.constituency} | Voted: ${v.voted}\n`);
+        document.getElementById('voterList').innerText = out || "No voters registered.";
+    });
+}
 
-    conn = db()
-    c = conn.cursor()
-    added = 0
-    skipped = 0
+// Candidate Management
+function addCandidate() {
+    apiCall('/add_candidate', { 
+        name: getVal('cName'), 
+        party: getVal('cParty'), 
+        state: getVal('cState'), 
+        district: getVal('cDist'), 
+        constituency: getVal('cConst') 
+    });
+}
 
-    for v in voters:
-        try:
-            c.execute("""
-                INSERT INTO voters (name, state, district, constituency, fingerprint_id, voted) 
-                VALUES (?, ?, ?, ?, ?, 0)
-            """, (
-                v.get('name'), 
-                v.get('state', 'Tamil Nadu'), 
-                v.get('district', 'Chennai'),
-                v.get('constituency', 'ABC'),
-                v.get('fingerprint_id')
-            ))
-            added += 1
-        except sqlite3.IntegrityError:
-            skipped += 1
-        except Exception as e:
-            print(f"Bulk Error: {e}")
-            skipped += 1
+function deleteCandidate() {
+    apiCall('/delete_candidate', { name: getVal('cName') });
+}
 
-    conn.commit()
-    conn.close()
-    return jsonify({"status": f"Success: {added} added, {skipped} skipped"})
+function loadCandidates() {
+    fetch('/view_candidates').then(res => res.json()).then(data => {
+        let out = "";
+        data.forEach(c => out += `[${c.party}] ${c.name.padEnd(10)} | Const: ${c.constituency} | Votes: ${c.votes}\n`);
+        document.getElementById('candidateList').innerText = out || "No candidates found.";
+    });
+}
 
-# ---------------- VOTING SYSTEM ----------------
-@app.route('/vote', methods=['POST'])
-def vote():
-    data = request.json
-    voter_id = data['voter_id']
-    candidate_id = data['candidate_id']
+function resetVotes() {
+    if(confirm("Zero-out all current votes?")) {
+        fetch('/reset_votes', { 
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({password: getPass()})
+        }).then(res => res.json()).then(data => alert(data.status));
+    }
+}
+</script>
 
-    conn = db()
-    c = conn.cursor()
-    try:
-        c.execute("INSERT INTO votes (voter_id, candidate_id) VALUES (?,?)", (voter_id, candidate_id))
-        c.execute("UPDATE voters SET voted=1 WHERE id=?", (voter_id,))
-        c.execute("UPDATE candidates SET votes = votes + 1 WHERE id=?", (candidate_id,))
-        conn.commit()
-        status = "success"
-    except Exception as e:
-        print(f"Vote Error: {e}")
-        status = "error"
-    finally:
-        conn.close()
-    return jsonify({"status": status})
-
-# ---------------- ADMIN CONTROLS ----------------
-@app.route('/live_stats')
-def stats():
-    conn = db()
-    c = conn.cursor()
-    total_voters = c.execute("SELECT COUNT(*) FROM voters").fetchone()[0]
-    total_votes = c.execute("SELECT COUNT(*) FROM votes").fetchone()[0]
-    conn.close()
-    return jsonify({"total_voters": total_voters, "total_votes": total_votes})
-
-@app.route('/publish_results', methods=['POST'])
-def publish():
-    global RESULT_LOCK
-    if request.json.get("password") == ADMIN_PASS:
-        RESULT_LOCK = False
-        return jsonify({"status": "unlocked"})
-    return jsonify({"status": "wrong_password"})
-
-@app.route('/lock_results', methods=['POST'])
-def lock():
-    global RESULT_LOCK
-    if request.json.get("password") == ADMIN_PASS:
-        RESULT_LOCK = True
-        return jsonify({"status": "locked"})
-    return jsonify({"status": "wrong_password"})
-
-@app.route('/reset_all', methods=['POST'])
-def reset_all():
-    if request.json.get("password") != ADMIN_PASS:
-        return jsonify({"status": "wrong_password"})
-
-    conn = db()
-    c = conn.cursor()
-    c.execute("DELETE FROM votes")
-    c.execute("UPDATE candidates SET votes = 0")
-    c.execute("UPDATE voters SET voted = 0")
-    conn.commit()
-    conn.close()
-    return jsonify({"status": "reset_done"})
-
-# ---------------- VIEW DATA ----------------
-@app.route('/view_voters')
-def view_voters():
-    conn = db()
-    rows = conn.execute("SELECT * FROM voters").fetchall()
-    conn.close()
-    return jsonify([dict(r) for r in rows])
-
-@app.route('/view_candidates')
-def view_candidates():
-    conn = db()
-    rows = conn.execute("SELECT * FROM candidates").fetchall()
-    conn.close()
-    return jsonify([dict(r) for r in rows])
-
-@app.route('/results_data')
-def results_data():
-    if RESULT_LOCK:
-        return jsonify({"status": "locked"})
-    conn = db()
-    rows = conn.execute("SELECT name, party, votes FROM candidates").fetchall()
-    conn.close()
-    return jsonify([dict(r) for r in rows])
-
-# ---------------- ROUTING ----------------
-@app.route('/')
-def home():
-    return send_from_directory(app.static_folder, 'index.html')
-
-@app.route('/admin')
-def admin():
-    return send_from_directory(app.static_folder, 'admin.html')
-
-@app.route('/result')
-def result():
-    return send_from_directory(app.static_folder, 'result.html')
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+</body>
+</html>
