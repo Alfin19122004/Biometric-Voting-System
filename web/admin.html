@@ -71,7 +71,6 @@
         input:focus, textarea:focus { border-color: var(--accent); background: #26334d; }
 
         .btn-group { display: flex; gap: 10px; margin-bottom: 15px; }
-        
         button {
             flex: 1; padding: 12px; border-radius: 12px; border: none; font-weight: 700;
             font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
@@ -80,7 +79,6 @@
         .btn-primary { background: var(--accent); color: white; }
         .btn-outline { background: transparent; border: 1px solid var(--glass-border); color: white; }
         .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px dashed var(--danger); }
-        .btn-success { background: rgba(16, 185, 129, 0.1); color: var(--success); border: 1px solid var(--success); }
         button:hover { filter: brightness(1.2); transform: translateY(-2px); }
 
         pre {
@@ -105,13 +103,10 @@
 <body>
 
 <div class="admin-container">
-    
     <aside class="card">
         <div class="shield-icon">🛡️</div>
         <h1>Master Console</h1>
-        
         <input type="password" id="pass" placeholder="Admin Key">
-        
         <div style="display:flex; flex-direction:column; gap:12px;">
             <button class="btn-primary" data-tip="Release results for live viewing" onclick="publish()">Publish Results</button>
             <button class="btn-outline" style="color:var(--warning); border-color:var(--warning)" data-tip="Stop voting and result access" onclick="lock()">Lock Results</button>
@@ -121,14 +116,13 @@
         <h2>Live Metrics</h2>
         <button class="btn-outline" onclick="getStats()">Fetch Real-time Stats</button>
         <div id="statDisplay" style="font-size: 0.85rem; margin-top: 15px; color: var(--text-dim); line-height: 1.8;">
-            Total Registered: <span style="color:white">--</span> <br> 
+            Total Registered: <span style="color:white">--</span> <br>
             Total Votes Cast: <span style="color:white">--</span>
         </div>
     </aside>
 
     <main class="card">
         <div class="grid-panel">
-            
             <div>
                 <h2>Voter Registration</h2>
                 <input type="text" id="vName" placeholder="Full Name">
@@ -136,18 +130,17 @@
                 <input type="text" id="vState" placeholder="State" value="Tamil Nadu">
                 <input type="text" id="vDist" placeholder="District" value="Chennai">
                 <input type="text" id="vConst" placeholder="Constituency" value="ABC">
-                
                 <div class="btn-group">
                     <button class="btn-primary" data-tip="Save new voter to DB" onclick="addVoter()">Add</button>
                     <button class="btn-outline" data-tip="Update the log display" onclick="loadVoters()">View</button>
                     <button class="btn-danger" data-tip="Delete by Fingerprint ID" onclick="deleteVoter()">Delete</button>
                 </div>
 
-                <h2 style="color: var(--success)">Bulk Import</h2>
-                <textarea id="bulkVoters" placeholder="Name, FingerprintID (One per line)&#10;Ex: John Doe, 101"></textarea>
-                <button class="btn-success" style="width: 100%" onclick="addBulkVoters()">Process Bulk Upload</button>
-
-                <h2 style="margin-top: 25px;">Registration Log</h2>
+                <h2>Bulk Registration</h2>
+                <textarea id="bulkVoters" placeholder="Name, FingerprintID (one per line)&#10;John Doe, 101&#10;Jane Smith, 102"></textarea>
+                <button class="btn-primary" style="width:100%" onclick="addBulkVoters()">Process Bulk Upload</button>
+                
+                <h2 style="margin-top:20px">Voter Log</h2>
                 <pre id="voterList">System ready...</pre>
             </div>
 
@@ -164,137 +157,131 @@
                     <button class="btn-outline" data-tip="Update vote tallies below" onclick="loadCandidates()">View</button>
                     <button class="btn-danger" data-tip="Remove candidate by Name" onclick="deleteCandidate()">Delete</button>
                 </div>
-                
-                <h2>Candidate Tally</h2>
                 <pre id="candidateList">Waiting for fetch...</pre>
                 
                 <h2 style="color:var(--warning)">Session Reset</h2>
-                <button class="btn-outline" style="border-style:dashed; color:var(--warning); width: 100%" data-tip="Set all vote counts to zero" onclick="resetVotes()">Zero-Out Vote Tally</button>
+                <button class="btn-outline" style="border-style:dashed; color:var(--warning); width: 100%;" data-tip="Set all vote counts to zero" onclick="resetVotes()">Zero-Out Vote Tally</button>
             </div>
-
         </div>
     </main>
 </div>
 
 <script>
-const getVal = (id) => document.getElementById(id).value;
-const getPass = () => document.getElementById('pass').value;
+    const getVal = (id) => document.getElementById(id).value;
+    const getPass = () => document.getElementById('pass').value;
 
-async function apiCall(endpoint, body = null) {
-    const options = {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: body ? JSON.stringify(body) : null
-    };
-    try {
-        const res = await fetch(endpoint, options);
-        const data = await res.json();
-        alert("Server: " + data.status);
-        return data;
-    } catch (err) { alert("Connection Error"); }
-}
+    async function apiCall(endpoint, body = null) {
+        const options = {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: body ? JSON.stringify(body) : null
+        };
+        try {
+            const res = await fetch(endpoint, options);
+            const data = await res.json();
+            alert("Server: " + data.status);
+            return data;
+        } catch (err) { alert("Connection Error"); }
+    }
 
-// System Controls
-function publish() { apiCall('/publish_results', {password: getPass()}); }
-function lock() { apiCall('/lock_results', {password: getPass()}); }
-function resetElection() { if(confirm("PERMANENTLY DELETE ALL DATA?")) apiCall('/reset_all', {password: getPass()}); }
+    // --- System Controls ---
+    function publish() { apiCall('/publish_results', {password: getPass()}); }
+    function lock() { apiCall('/lock_results', {password: getPass()}); }
+    function resetElection() { if(confirm("ERASE ALL DATA?")) apiCall('/reset_all', {password: getPass()}); }
 
-function getStats() {
-    fetch('/live_stats').then(res => res.json()).then(data => {
-        document.getElementById('statDisplay').innerHTML = `
-            Total Registered: <span style="color:var(--accent)">${data.total_voters}</span> <br> 
-            Total Votes Cast: <span style="color:var(--success)">${data.total_votes}</span>`;
-    });
-}
+    function getStats() {
+        fetch('/live_stats').then(res => res.json()).then(data => {
+            document.getElementById('statDisplay').innerHTML = `
+                Total Registered: <span style="color:var(--accent)">${data.total_voters}</span> <br>
+                Total Votes Cast: <span style="color:var(--success)">${data.total_votes}</span>`;
+        });
+    }
 
-// Voter Management
-function addVoter() {
-    apiCall('/add_voter', { 
-        password: getPass(),
-        name: getVal('vName'), 
-        fingerprint_id: getVal('vFID'), 
-        state: getVal('vState'), 
-        district: getVal('vDist'), 
-        constituency: getVal('vConst') 
-    });
-}
+    // --- Voter Management ---
+    function addVoter() {
+        apiCall('/add_voter', {
+            name: getVal('vName'),
+            fingerprint_id: getVal('vFID'),
+            state: getVal('vState'),
+            district: getVal('vDist'),
+            constituency: getVal('vConst')
+        });
+    }
 
-function addBulkVoters() {
-    let text = document.getElementById("bulkVoters").value;
-    let lines = text.split("\n");
-    let voters = [];
+    function addBulkVoters() {
+        let text = document.getElementById("bulkVoters").value;
+        let lines = text.split("\n");
+        let voters = [];
 
-    // Capture the location values from the textboxes to use as defaults
-    let defState = getVal('vState');
-    let defDist = getVal('vDist');
-    let defConst = getVal('vConst');
+        lines.forEach(line => {
+            let parts = line.split(",");
+            if(parts.length == 2) {
+                voters.push({
+                    name: parts[0].trim(),
+                    fingerprint_id: parseInt(parts[1].trim()),
+                    // Defaulting to form values for bulk regional data
+                    state: getVal('vState'),
+                    district: getVal('vDist'),
+                    constituency: getVal('vConst')
+                });
+            }
+        });
 
-    lines.forEach(line => {
-        let parts = line.split(",");
-        if(parts.length >= 2) {
-            voters.push({
-                name: parts[0].trim(),
-                fingerprint_id: parseInt(parts[1].trim()),
-                state: defState,
-                district: defDist,
-                constituency: defConst
-            });
+        if (voters.length === 0) return alert("No valid data found. Use format: Name, ID");
+
+        fetch('/add_bulk_voters', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ voters: voters })
+        })
+        .then(res => res.json())
+        .then(data => {
+            alert(data.status);
+            document.getElementById("bulkVoters").value = "";
+            loadVoters();
+        });
+    }
+
+    function deleteVoter() {
+        apiCall('/delete_voter', { fingerprint_id: getVal('vFID') });
+    }
+
+    function loadVoters() {
+        fetch('/view_voters').then(res => res.json()).then(data => {
+            let out = "";
+            data.forEach(v => out += `[FID:${v.fingerprint_id}] ${v.name.padEnd(10)} | Const: ${v.constituency} | Voted: ${v.voted}\n`);
+            document.getElementById('voterList').innerText = out || "No voters registered.";
+        });
+    }
+
+    // --- Candidate Management ---
+    function addCandidate() {
+        apiCall('/add_candidate', {
+            name: getVal('cName'),
+            party: getVal('cParty'),
+            state: getVal('cState'),
+            district: getVal('cDist'),
+            constituency: getVal('cConst')
+        });
+    }
+
+    function deleteCandidate() {
+        apiCall('/delete_candidate', { name: getVal('cName') });
+    }
+
+    function loadCandidates() {
+        fetch('/view_candidates').then(res => res.json()).then(data => {
+            let out = "";
+            data.forEach(c => out += `[${c.party}] ${c.name.padEnd(10)} | Const: ${c.constituency} | Votes: ${c.votes}\n`);
+            document.getElementById('candidateList').innerText = out || "No candidates found.";
+        });
+    }
+
+    function resetVotes() {
+        if(confirm("Zero-out all current votes?")) {
+            fetch('/reset_votes', { method: 'POST' }).then(res => res.json()).then(data => alert(data.status));
         }
-    });
-
-    if(voters.length === 0) {
-        alert("Format error: Use 'Name, ID' per line.");
-        return;
     }
-
-    apiCall('/add_bulk_voters', { voters: voters, password: getPass() })
-    .then(() => {
-        document.getElementById("bulkVoters").value = "";
-        loadVoters(); // Refresh list automatically
-    });
-}
-
-function deleteVoter() {
-    apiCall('/delete_voter', { password: getPass(), fingerprint_id: getVal('vFID') });
-}
-
-function loadVoters() {
-    fetch('/view_voters').then(res => res.json()).then(data => {
-        let out = "";
-        data.forEach(v => out += `[FID:${v.fingerprint_id}] ${v.name.padEnd(12)} | ${v.constituency} | Voted: ${v.voted}\n`);
-        document.getElementById('voterList').innerText = out || "No voters registered.";
-    });
-}
-
-// Candidate Management
-function addCandidate() {
-    apiCall('/add_candidate', { 
-        password: getPass(),
-        name: getVal('cName'), 
-        party: getVal('cParty'), 
-        state: getVal('cState'), 
-        district: getVal('cDist'), 
-        constituency: getVal('cConst') 
-    });
-}
-
-function deleteCandidate() {
-    apiCall('/delete_candidate', { password: getPass(), name: getVal('cName') });
-}
-
-function loadCandidates() {
-    fetch('/view_candidates').then(res => res.json()).then(data => {
-        let out = "";
-        data.forEach(c => out += `[${c.party}] ${c.name.padEnd(12)} | ${c.constituency} | Votes: ${c.votes}\n`);
-        document.getElementById('candidateList').innerText = out || "No candidates found.";
-    });
-}
-
-function resetVotes() {
-    if(confirm("Zero-out all current votes?")) {
-        apiCall('/reset_votes', { password: getPass() });
-    }
-}
 </script>
 
 </body>
